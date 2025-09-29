@@ -16,7 +16,7 @@ function childIf<T>(value: T, child: (value: NonNullable<T>) => XmlNode) {
 
 type XmlNode = {
   name: string
-  attributes?: Record<string, string>
+  attributes?: Record<string, string | number>
   children?: Array<XmlNode> | string
 }
 
@@ -48,7 +48,7 @@ function xml(node: XmlNode | string) {
   return builder
 }
 
-export class Enum<Id extends string, Nick extends string> {
+export class Enum<Id extends string = string, Nick extends string = string> {
   readonly id: Id
   readonly values: Record<Nick, number>
   declare nicks: Nick
@@ -63,7 +63,7 @@ export class Enum<Id extends string, Nick extends string> {
   }
 }
 
-export class Flags<Id extends string, Nick extends string> {
+export class Flags<Id extends string = string, Nick extends string = string> {
   readonly id: Id
   readonly values: Record<Nick, number>
   declare nicks: Nick
@@ -78,29 +78,35 @@ export class Flags<Id extends string, Nick extends string> {
   }
 }
 
-type TypedKey<Name extends string, Type extends string> = {
+type TypedKey<Name extends string = string, Type extends string = string> = {
   name: Name
   type: Type
 }
 
-type EnumKey<Name extends string, Enumeration extends Enum<string, string>> = {
+type EnumKey<Name extends string = string, Enumeration extends Enum = Enum> = {
   name: Name
   enum: Enumeration
   aliases: Record<string, Enumeration["nicks"][number]>
 }
 
-type FlagsKey<Name extends string, Flag extends Flags<string, string>> = {
+type FlagsKey<Name extends string = string, Flag extends Flags = Flags> = {
   name: Name
   flag: Flag
+}
+
+type KeyProps<T = any> = {
+  default: T
+  summary?: string
+  description?: string
 }
 
 // `override` child nodes are unsupported: use composition instead
 // `extends` attribute is unsupported: use composition instead
 export class Schema<
   Id extends string,
-  TypedKeys extends Array<TypedKey<string, string>> = [],
-  EnumKeys extends Array<EnumKey<string, Enum<string, string>>> = [],
-  FlagsKeys extends Array<FlagsKey<string, Flags<string, string>>> = [],
+  TypedKeys extends Array<TypedKey> = [],
+  EnumKeys extends Array<EnumKey> = [],
+  FlagsKeys extends Array<FlagsKey> = [],
 > {
   readonly id: Id
   readonly path?: string
@@ -134,25 +140,25 @@ export class Schema<
   }
 
   [internal] = {
-    typedKeys: new Set<TypedKey<string, string>>(),
-    flagsKeys: new Set<FlagsKey<string, Flags<string, string>>>(),
-    enumKeys: new Set<EnumKey<string, Enum<string, string>>>(),
+    typedKeys: new Set<TypedKey>(),
+    flagsKeys: new Set<FlagsKey>(),
+    enumKeys: new Set<EnumKey>(),
     nodes: new Array<XmlNode>(),
   }
 
-  #addFlagsKey(key: FlagsKey<string, Flags<string, string>>) {
+  #addFlagsKey(key: FlagsKey) {
     const schema = new Schema<Id, TypedKeys, EnumKeys, FlagsKeys>(this)
     schema[internal].flagsKeys.add(key)
     return schema
   }
 
-  #addEnumKey(key: EnumKey<string, Enum<string, string>>) {
+  #addEnumKey(key: EnumKey) {
     const schema = new Schema<Id, TypedKeys, EnumKeys, FlagsKeys>(this)
     schema[internal].enumKeys.add(key)
     return schema
   }
 
-  #addTypedKey(key: TypedKey<string, string>) {
+  #addTypedKey(key: TypedKey) {
     const schema = new Schema<Id, TypedKeys, EnumKeys, FlagsKeys>(this)
     schema[internal].typedKeys.add(key)
     return schema
@@ -176,86 +182,88 @@ export class Schema<
     return schema
   }
 
-  // `range` child nodes are not yet supported
   // `choices` child nodes are not supported: use enum/flags instead
   key<const Name extends string, const Type extends string>(
     name: Name,
     type: Type,
-    props: {
-      default: DeepInfer<Type>
-      summary?: string
-      description?: string
+    props: KeyProps<DeepInfer<Type>> & {
+      range?: {
+        min?: number
+        max?: number
+      }
     },
-  ) {
-    return this.#addTypedKey({ name, type }).#addKey(name, { type }, [
-      { name: "default", children: serialize(type, props.default) },
-      ...childIf(props.summary, (summary) => ({
-        name: "summary",
-        children: summary,
-      })),
-      ...childIf(props.description, (description) => ({
-        name: "description",
-        children: description,
-      })),
-    ]) as Schema<
-      Id,
-      [...TypedKeys, { name: Name; type: Type }],
-      EnumKeys,
-      FlagsKeys
-    >
-  }
+  ): Schema<Id, [...TypedKeys, { name: Name; type: Type }], EnumKeys, FlagsKeys>
 
   // `aliases` not yet supported
-  enum<const Name extends string, E extends Enum<string, string>>(
+  key<const Name extends string, const E extends Enum<string, string>>(
     name: Name,
     enumeration: E,
-    props: {
-      default: E["nicks"]
-      summary?: string
-      description?: string
-    },
-  ) {
-    return this.#addEnumKey({ name, enum: enumeration, aliases: {} }).#addKey(
-      name,
-      { enum: enumeration.id },
-      [
-        { name: "default", children: serialize("s", props.default) },
-        ...childIf(props.summary, (summary) => ({
-          name: "summary",
-          children: summary,
-        })),
-        ...childIf(props.description, (description) => ({
-          name: "description",
-          children: description,
-        })),
-      ],
-    ) as Schema<Id, TypedKeys, [...EnumKeys, EnumKey<Name, E>], FlagsKeys>
-  }
+    props: KeyProps<E["nicks"]>,
+  ): Schema<Id, TypedKeys, [...EnumKeys, EnumKey<Name, E>], FlagsKeys>
 
-  flags<const Name extends string, F extends Flags<string, string>>(
+  key<const Name extends string, const F extends Flags<string, string>>(
     name: Name,
-    enumeration: F,
-    props: {
-      default: Array<F["nicks"]>
-      summary?: string
-      description?: string
+    flags: F,
+    props: KeyProps<Array<F["nicks"]>>,
+  ): Schema<Id, TypedKeys, EnumKeys, [...FlagsKeys, FlagsKey<Name, F>]>
+
+  key(
+    name: string,
+    type: string | Flags | Enum,
+    props: KeyProps & {
+      range?: { min?: number; max?: number }
     },
   ) {
-    return this.#addFlagsKey({ name, flag: enumeration }).#addKey(
-      name,
-      { flags: enumeration.id },
-      [
-        { name: "default", children: serialize("as", props.default) },
-        ...childIf(props.summary, (summary) => ({
-          name: "summary",
-          children: summary,
+    const summary = childIf(props.summary, (summary) => ({
+      name: "summary",
+      children: summary,
+    }))
+
+    const description = childIf(props.description, (description) => ({
+      name: "description",
+      children: description,
+    }))
+
+    if (typeof type === "string") {
+      return this.#addTypedKey({ name, type }).#addKey(name, { type }, [
+        { name: "default", children: serialize(type, props.default) },
+        ...summary,
+        ...description,
+        ...childIf(props.range, ({ min, max }) => ({
+          name: "range",
+          attributes: {
+            ...(typeof min === "number" && { min }),
+            ...(typeof max === "number" && { max }),
+          },
         })),
-        ...childIf(props.description, (description) => ({
-          name: "description",
-          children: description,
-        })),
-      ],
-    ) as Schema<Id, TypedKeys, EnumKeys, [...FlagsKeys, FlagsKey<Name, F>]>
+      ])
+    }
+
+    if (type instanceof Enum) {
+      return this.#addEnumKey({ name, enum: type, aliases: {} }).#addKey(
+        name,
+        { enum: type.id },
+        [
+          { name: "default", children: serialize("s", props.default) },
+          ...summary,
+          ...description,
+        ],
+      )
+    }
+
+    if (type instanceof Flags) {
+      return this.#addFlagsKey({ name, flag: type }).#addKey(
+        name,
+        { flags: type.id },
+        [
+          { name: "default", children: serialize("as", props.default) },
+          ...summary,
+          ...description,
+        ],
+      )
+    }
+
+    throw Error()
   }
 
   // TODO: support children nodes

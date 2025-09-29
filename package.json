@@ -1,7 +1,7 @@
 {
   "name": "gnim-schemas",
   "type": "module",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "author": "Aylur",
   "license": "MIT",
   "repository": {

@@ -28,10 +28,10 @@ Type-safe Gio Settings schema definitions.
        },
        summary: "Variant dict key",
      })
-     .enum("enum-key", myEnum, {
+     .key("enum-key", myEnum, {
        default: "one",
      })
-     .flags("flags-key", myFlags, {
+     .key("flags-key", myFlags, {
        default: ["one", "two"],
      })
 

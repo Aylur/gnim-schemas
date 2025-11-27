@@ -8,18 +8,18 @@ importers:
 
   .:
     dependencies:
-      '@girs/gjs':
-        specifier: 4.0.0-beta.38
-        version: 4.0.0-beta.38
       gnim:
-        specifier: ^1.8.0
-        version: 1.8.0
+        specifier: ^1.9.0
+        version: 1.9.0
     devDependencies:
       '@girs/gio-2.0':
-        specifier: 2.86.0-4.0.0-beta.38
+        specifier: latest
         version: 2.86.0-4.0.0-beta.38
+      '@girs/gjs':
+        specifier: latest
+        version: 4.0.0-beta.38
       '@girs/glib-2.0':
-        specifier: 2.86.0-4.0.0-beta.38
+        specifier: latest
         version: 2.86.0-4.0.0-beta.38
 
 packages:
@@ -42,8 +42,8 @@ packages:
   '@girs/gobject-2.0@2.86.0-4.0.0-beta.38':
     resolution: {integrity: sha512-oYrm6Gb/tCQosMkN8Beu5jqGRkJ7LED4O1H1dKYOI4SnP1Ojb66A9ECy78yTO8piBtMopsbRODV81yKniVtKKA==}
 
-  gnim@1.8.0:
-    resolution: {integrity: sha512-lsfZ+iXiy92zZyD8+R2NtS+JzvWF6VAsppmz3Xr7LyauH0/3E77JUF5HIS3iCOC1pSk9mL9GnxxAiOjdgBo7XQ==}
+  gnim@1.9.0:
+    resolution: {integrity: sha512-ubtl+BkcHFYImLQN/dg7XtM6VpOMZy1KlXOF+W/QlBVFG+c07lf+hC+bAkPqkyLwL1YUEIoLtk7iXlIuhbOYPA==}
     engines: {gjs: '>=1.79.0'}
 
 snapshots:
@@ -84,4 +84,4 @@ snapshots:
       '@girs/gjs': 4.0.0-beta.38
       '@girs/glib-2.0': 2.86.0-4.0.0-beta.38
 
-  gnim@1.8.0: {}
+  gnim@1.9.0: {}

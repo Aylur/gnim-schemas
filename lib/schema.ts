@@ -182,7 +182,7 @@ export class Schema<
     return schema
   }
 
-  // `choices` child nodes are not supported: use enum/flags instead
+  // TODO: `choices`
   key<const Name extends string, const Type extends string>(
     name: Name,
     type: Type,
@@ -194,7 +194,7 @@ export class Schema<
     },
   ): Schema<Id, [...TypedKeys, { name: Name; type: Type }], EnumKeys, FlagsKeys>
 
-  // `aliases` not yet supported
+  // TODO: `aliases`
   key<const Name extends string, const E extends Enum<string, string>>(
     name: Name,
     enumeration: E,

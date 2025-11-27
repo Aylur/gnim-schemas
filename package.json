@@ -1,7 +1,7 @@
 {
   "name": "gnim-schemas",
   "type": "module",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "Aylur",
   "license": "MIT",
   "repository": {
@@ -33,7 +33,7 @@
     "@girs/glib-2.0": "latest"
   },
   "dependencies": {
-    "gnim": "^1.8.0"
+    "gnim": "^1.9.0"
   },
   "prettier": {
     "semi": false,
